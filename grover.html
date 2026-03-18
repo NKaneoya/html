@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>グローバーのアルゴリズム - 量子コンピューティング入門</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            background: #0b0e17;
+            color: #d0d8e8;
+            line-height: 1.85;
+        }
+
+        /* Quantum background animation */
+        .bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* Header */
+        .hero {
+            text-align: center;
+            padding: 60px 0 40px;
+        }
+
+        .hero .tag {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #818cf8;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .hero .subtitle {
+            font-size: 1.15rem;
+            color: #8890a4;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Table of contents */
+        .toc {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin: 32px 0;
+        }
+
+        .toc h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6366f1;
+            margin-bottom: 12px;
+        }
+
+        .toc ol {
+            padding-left: 20px;
+        }
+
+        .toc li {
+            margin: 6px 0;
+        }
+
+        .toc a {
+            color: #a5b4fc;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: #e0e7ff;
+        }
+
+        /* Sections */
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #e0e7ff;
+            margin: 48px 0 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            color: #c4b5fd;
+            margin: 28px 0 12px;
+        }
+
+        p {
+            margin: 12px 0;
+            color: #b0b8cc;
+        }
+
+        strong {
+            color: #e0e7ff;
+        }
+
+        /* Info boxes */
+        .box {
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+
+        .box-analogy {
+            background: rgba(99, 102, 241, 0.08);
+            border-left: 3px solid #6366f1;
+        }
+
+        .box-key {
+            background: rgba(244, 114, 182, 0.08);
+            border-left: 3px solid #f472b6;
+        }
+
+        .box-math {
+            background: rgba(45, 212, 191, 0.08);
+            border-left: 3px solid #2dd4bf;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+
+        .box .label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .box-analogy .label { color: #818cf8; }
+        .box-key .label { color: #f472b6; }
+        .box-math .label { color: #2dd4bf; }
+
+        /* Diagram: amplitude bars */
+        .amp-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            margin: 28px 0;
+            padding: 24px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .amp-step-title {
+            font-size: 0.85rem;
+            color: #818cf8;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .amp-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 120px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .amp-bar {
+            flex: 1;
+            border-radius: 3px 3px 0 0;
+            min-width: 4px;
+            transition: height 1s ease;
+            position: relative;
+        }
+
+        .amp-bar.target {
+            box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+        }
+
+        .amp-label {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .mean-line {
+            position: absolute;
+            left: 0; right: 0;
+            border-top: 1px dashed rgba(255,255,255,0.2);
+            z-index: 2;
+        }
+
+        .mean-line span {
+            position: absolute;
+            right: -32px;
+            top: -10px;
+            font-size: 0.65rem;
+            color: #666;
+        }
+
+        /* Comparison table */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 0.95rem;
+        }
+
+        .compare-table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #a5b4fc;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .compare-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: #b0b8cc;
+        }
+
+        .compare-table tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Circuit diagram */
+        .circuit {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin: 24px 0;
+            padding: 24px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .circuit-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 16px;
+            min-width: 80px;
+        }
+
+        .circuit-gate {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #c4b5fd;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .circuit-gate.oracle {
+            background: rgba(244, 114, 182, 0.2);
+            border-color: rgba(244, 114, 182, 0.4);
+            color: #f9a8d4;
+        }
+
+        .circuit-gate.diffusion {
+            background: rgba(45, 212, 191, 0.2);
+            border-color: rgba(45, 212, 191, 0.4);
+            color: #99f6e4;
+        }
+
+        .circuit-arrow {
+            color: #444;
+            font-size: 1.2rem;
+        }
+
+        .circuit-label {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .circuit-brace {
+            border: 1px dashed rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 8px 4px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            position: relative;
+        }
+
+        .circuit-brace-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #818cf8;
+            white-space: nowrap;
+        }
+
+        /* Interactive demo */
+        .demo {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 28px;
+            margin: 32px 0;
+        }
+
+        .demo h3 {
+            margin-top: 0;
+            color: #e0e7ff;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+
+        .demo-controls label {
+            font-size: 0.85rem;
+            color: #8890a4;
+        }
+
+        .demo-controls select, .demo-controls button {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #d0d8e8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .demo-controls button {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .demo-controls button:hover {
+            background: rgba(99, 102, 241, 0.35);
+        }
+
+        #demo-canvas {
+            width: 100%;
+            height: 250px;
+            margin-top: 16px;
+        }
+
+        .demo-info {
+            font-size: 0.85rem;
+            color: #8890a4;
+            margin-top: 12px;
+        }
+
+        /* Code block */
+        .code-block {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: #c4b5fd;
+        }
+
+        .code-block .comment { color: #5a6378; }
+        .code-block .keyword { color: #f472b6; }
+        .code-block .func { color: #818cf8; }
+        .code-block .num { color: #2dd4bf; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #444;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            margin-top: 48px;
+        }
+
+        footer a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.8rem; }
+            .page { padding: 20px 16px 60px; }
+            .circuit { padding: 16px 8px; }
+            .circuit-block { min-width: 60px; padding: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <canvas class="bg-canvas" id="bgCanvas"></canvas>
+
+    <div class="page">
+        <header class="hero">
+            <div class="tag">Quantum Computing</div>
+            <h1>グローバーのアルゴリズム</h1>
+            <p class="subtitle">量子コンピュータが「探し物」を劇的に速くする仕組みを、ゼロから理解する</p>
+        </header>
+
+        <nav class="toc">
+            <h3>目次</h3>
+            <ol>
+                <li><a href="#problem">問題: 巨大なデータベースから1つを探す</a></li>
+                <li><a href="#classical">古典的な探索の限界</a></li>
+                <li><a href="#quantum-basics">量子ビットと重ね合わせ</a></li>
+                <li><a href="#overview">グローバーのアルゴリズム概要</a></li>
+                <li><a href="#steps">アルゴリズムの3ステップ</a></li>
+                <li><a href="#visual">振幅の変化を視覚化する</a></li>
+                <li><a href="#demo">インタラクティブデモ</a></li>
+                <li><a href="#complexity">計算量の比較</a></li>
+                <li><a href="#applications">応用と限界</a></li>
+                <li><a href="#code">Qiskitで実装してみる</a></li>
+            </ol>
+        </nav>
+
+        <!-- Section 1 -->
+        <h2 id="problem">1. 問題: 巨大なデータベースから1つを探す</h2>
+        <p>
+            ソートされていないリストの中から、特定の条件を満たす要素を見つけたいとします。
+            例えば、<strong>100万件のレコードから1件だけマッチするものを探す</strong>場合、
+            古典的なコンピュータにはどれくらいの手間がかかるでしょうか?
+        </p>
+
+        <div class="box box-analogy">
+            <div class="label">たとえ話</div>
+            <p>
+                電話帳に100万人分の名前が<strong>ランダムな順番</strong>で載っていると想像してください。
+                「田中太郎」さんを探すには、最悪100万回ページをめくる必要があります。
+                量子コンピュータなら、たった<strong>約1,000回</strong>で見つけられます。
+            </p>
+        </div>
+
+        <!-- Section 2 -->
+        <h2 id="classical">2. 古典的な探索の限界</h2>
+        <p>
+            ソートされていない N 個の要素から1つを探す場合、
+            古典コンピュータは最悪 <strong>N回</strong>、平均でも <strong>N/2回</strong> のチェックが必要です。
+            これは証明された下界であり、どんなアルゴリズムでも超えられません。
+        </p>
+        <p>
+            一方、グローバーのアルゴリズムは <strong>O(√N)</strong> 回で探索を完了します。
+            N = 1,000,000 なら √N = 1,000。<strong>1000倍の高速化</strong>です。
+        </p>
+
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>データ数 N</th>
+                    <th>古典 (平均)</th>
+                    <th>グローバー</th>
+                    <th>高速化</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>256</td><td>128回</td><td>~12回</td><td>約10倍</td></tr>
+                <tr><td>10,000</td><td>5,000回</td><td>~79回</td><td>約63倍</td></tr>
+                <tr><td>1,000,000</td><td>500,000回</td><td>~785回</td><td>約637倍</td></tr>
+                <tr><td>10<sup>12</sup></td><td>5×10<sup>11</sup>回</td><td>~10<sup>6</sup>回</td><td>約50万倍</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Section 3 -->
+        <h2 id="quantum-basics">3. 量子ビットと重ね合わせ</h2>
+        <p>
+            グローバーのアルゴリズムを理解するには、2つの量子力学的な性質が鍵になります。
+        </p>
+
+        <h3>重ね合わせ (Superposition)</h3>
+        <p>
+            古典的なビットは 0 か 1 のどちらかですが、量子ビット(qubit)は
+            <strong>0 と 1 を同時に持てます</strong>。n 個の量子ビットがあれば、
+            2<sup>n</sup> 個の状態を同時に表現できます。これにより、
+            すべての候補を「一度に」考慮することが可能になります。
+        </p>
+
+        <h3>振幅 (Amplitude)</h3>
+        <p>
+            各状態には「振幅」という複素数が割り当てられています。
+            測定したときにその状態が観測される確率は、<strong>振幅の絶対値の2乗</strong>です。
+            グローバーのアルゴリズムの本質は、正解の振幅を大きくし、不正解の振幅を小さくする操作を繰り返すことです。
+        </p>
+
+        <div class="box box-math">
+            <div class="label">数式</div>
+            <p>
+                n 量子ビットの均等な重ね合わせ状態:<br>
+                |ψ⟩ = (1/√N) Σ|x⟩ &nbsp;&nbsp; (N = 2<sup>n</sup>)<br><br>
+                各状態の振幅 = 1/√N、観測確率 = 1/N (均等)
+            </p>
+        </div>
+
+        <!-- Section 4 -->
+        <h2 id="overview">4. グローバーのアルゴリズム概要</h2>
+        <p>
+            アルゴリズムは大きく3つのフェーズで構成されます。
+        </p>
+
+        <div class="circuit">
+            <div class="circuit-block">
+                <div class="circuit-gate">H<sup>⊗n</sup></div>
+                <div class="circuit-label">初期化</div>
+            </div>
+            <div class="circuit-arrow">→</div>
+            <div class="circuit-brace">
+                <div class="circuit-block">
+                    <div class="circuit-gate oracle">Oracle U<sub>f</sub></div>
+                    <div class="circuit-label">位相反転</div>
+                </div>
+                <div class="circuit-arrow">→</div>
+                <div class="circuit-block">
+                    <div class="circuit-gate diffusion">Diffusion D</div>
+                    <div class="circuit-label">振幅増幅</div>
+                </div>
+                <div class="circuit-brace-label">× 約 √N 回繰り返し</div>
+            </div>
+            <div class="circuit-arrow">→</div>
+            <div class="circuit-block">
+                <div class="circuit-gate">測定</div>
+                <div class="circuit-label">結果</div>
+            </div>
+        </div>
+
+        <!-- Section 5 -->
+        <h2 id="steps">5. アルゴリズムの3ステップ</h2>
+
+        <h3>Step 1: 均等な重ね合わせを作る</h3>
+        <p>
+            すべての量子ビットにアダマールゲート (H) を適用し、
+            N 個すべての状態が等しい振幅 1/√N を持つ状態を作ります。
+            この時点では、どの状態も同じ確率で観測されます。
+        </p>
+
+        <h3>Step 2: オラクル (Oracle) — 正解にマークをつける</h3>
+        <p>
+            オラクルは「正解の状態の振幅の符号を反転させる」ブラックボックスです。
+            正解 |w⟩ の振幅を +a から <strong>−a</strong> に変えます。
+            他の状態はそのまま。見た目にはほとんど何も変わっていないように見えますが、
+            この符号の違いが次のステップで決定的に効いてきます。
+        </p>
+
+        <div class="box box-analogy">
+            <div class="label">たとえ話</div>
+            <p>
+                暗い部屋に同じ高さの棒が N 本立っていると想像してください。
+                オラクルは正解の棒だけを<strong>上下逆さま</strong>にします。
+                まだ見つけてはいませんが、「印」がつきました。
+            </p>
+        </div>
+
+        <h3>Step 3: 拡散変換 (Diffusion) — 振幅増幅</h3>
+        <p>
+            ここが魔法の部分です。拡散変換は「平均値を軸にして全ての振幅を反転する」操作です。
+        </p>
+        <p>
+            正解の振幅は負(平均より下)なので、反転すると<strong>大きく跳ね上がります</strong>。
+            不正解の振幅は平均に近いので、反転しても少しだけ減ります。
+            Step 2 と Step 3 を約 (π/4)√N 回繰り返すと、
+            正解の振幅がほぼ 1 に、不正解がほぼ 0 になります。
+        </p>
+
+        <div class="box box-key">
+            <div class="label">重要ポイント</div>
+            <p>
+                繰り返しすぎると正解の振幅が下がってしまいます!
+                ちょうど良い回数で止めることが重要で、その最適回数は <strong>⌊(π/4)√N⌋</strong> 回です。
+            </p>
+        </div>
+
+        <!-- Section 6 -->
+        <h2 id="visual">6. 振幅の変化を視覚化する</h2>
+        <p>N = 8 (3量子ビット) の場合で、正解を |101⟩ = 5番目とした例を見てみましょう。</p>
+
+        <div class="amp-diagram" id="ampDiagram">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Section 7: Interactive Demo -->
+        <h2 id="demo">7. インタラクティブデモ</h2>
+        <div class="demo">
+            <h3>グローバーのアルゴリズム シミュレーター</h3>
+            <p style="font-size:0.9rem;color:#8890a4;">
+                反復回数を変えて、振幅がどう変化するか実験してみましょう。
+            </p>
+            <div class="demo-controls">
+                <label>量子ビット数:</label>
+                <select id="nQubits">
+                    <option value="2">2 (N=4)</option>
+                    <option value="3" selected>3 (N=8)</option>
+                    <option value="4">4 (N=16)</option>
+                    <option value="5">5 (N=32)</option>
+                </select>
+                <label>反復:</label>
+                <select id="nIter">
+                    <option value="0">0回</option>
+                    <option value="1">1回</option>
+                    <option value="2" selected>2回</option>
+                    <option value="3">3回</option>
+                    <option value="4">4回</option>
+                    <option value="5">5回</option>
+                    <option value="6">6回</option>
+                    <option value="7">7回</option>
+                    <option value="8">8回</option>
+                </select>
+                <button id="runDemo">実行</button>
+                <button id="optimalBtn">最適回数に設定</button>
+            </div>
+            <canvas id="demo-canvas"></canvas>
+            <div class="demo-info" id="demoInfo"></div>
+        </div>
+
+        <!-- Section 8 -->
+        <h2 id="complexity">8. 計算量の比較</h2>
+        <p>
+            グローバーのアルゴリズムは<strong>二次の高速化 (quadratic speedup)</strong> を提供します。
+            指数的ではないものの、これが最善であることも証明されています。
+        </p>
+
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>アルゴリズム</th>
+                    <th>クエリ数</th>
+                    <th>種別</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>線形探索</td><td>O(N)</td><td>古典</td></tr>
+                <tr><td>グローバー</td><td>O(√N)</td><td>量子</td></tr>
+                <tr><td>ソート+二分探索</td><td>O(N log N) 前処理</td><td>古典</td></tr>
+            </tbody>
+        </table>
+
+        <div class="box box-key">
+            <div class="label">注意</div>
+            <p>
+                グローバーの高速化は「ソートされていないデータ」に対するもの。
+                事前にソートできるなら二分探索 O(log N) の方が速い場合もあります。
+                グローバーが真価を発揮するのは、<strong>構造を持たない探索問題</strong>
+                (暗号解読、最適化問題の候補探索など)です。
+            </p>
+        </div>
+
+        <!-- Section 9 -->
+        <h2 id="applications">9. 応用と限界</h2>
+
+        <h3>応用</h3>
+        <p>
+            <strong>暗号解析:</strong> AES-128 は古典的には 2<sup>128</sup> の試行が必要ですが、
+            グローバーなら 2<sup>64</sup> で済みます。これが「ポスト量子暗号」が議論される理由の一つです。
+        </p>
+        <p>
+            <strong>最適化問題:</strong> SAT問題や巡回セールスマン問題などで、
+            候補空間を √N に圧縮する補助アルゴリズムとして使えます。
+        </p>
+        <p>
+            <strong>データベース検索:</strong> 理論的にはソートされていないDBの検索にも
+            使えますが、実際にはデータのロードがボトルネックになる点に注意が必要です。
+        </p>
+
+        <h3>限界</h3>
+        <p>
+            ・二次高速化であり、指数高速化ではない<br>
+            ・オラクルを量子回路として実装するコストがかかる<br>
+            ・現在のNISQデバイスではノイズにより大規模実行が困難<br>
+            ・最適反復回数を超えると成功確率が下がる
+        </p>
+
+        <!-- Section 10 -->
+        <h2 id="code">10. Qiskitで実装してみる</h2>
+        <p>3量子ビットで |101⟩ を探索する最小限の実装例です。</p>
+
+        <div class="code-block">
+<span class="keyword">from</span> qiskit <span class="keyword">import</span> QuantumCircuit
+<span class="keyword">from</span> qiskit_aer <span class="keyword">import</span> AerSimulator
+<span class="keyword">from</span> math <span class="keyword">import</span> pi, sqrt, floor
+
+n = <span class="num">3</span>
+N = <span class="num">2</span>**n
+target = <span class="num">0b101</span>  <span class="comment"># 探す状態</span>
+
+qc = QuantumCircuit(n, n)
+
+<span class="comment"># Step 1: 均等な重ね合わせ</span>
+qc.<span class="func">h</span>(range(n))
+
+<span class="comment"># Grover反復</span>
+iterations = floor(pi/<span class="num">4</span> * sqrt(N))
+<span class="keyword">for</span> _ <span class="keyword">in</span> range(iterations):
+    <span class="comment"># Oracle: |101⟩ の位相を反転</span>
+    qc.<span class="func">x</span>(<span class="num">1</span>)           <span class="comment"># ビット1を反転(0→1にマッチ)</span>
+    qc.<span class="func">ccz</span>(<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>)   <span class="comment"># 全ビット|1⟩の時に位相反転</span>
+    qc.<span class="func">x</span>(<span class="num">1</span>)           <span class="comment"># 元に戻す</span>
+
+    <span class="comment"># Diffusion: 平均周りの反転</span>
+    qc.<span class="func">h</span>(range(n))
+    qc.<span class="func">x</span>(range(n))
+    qc.<span class="func">ccz</span>(<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>)
+    qc.<span class="func">x</span>(range(n))
+    qc.<span class="func">h</span>(range(n))
+
+<span class="comment"># 測定</span>
+qc.<span class="func">measure</span>(range(n), range(n))
+
+<span class="comment"># 実行</span>
+sim = AerSimulator()
+result = sim.<span class="func">run</span>(qc, shots=<span class="num">1024</span>).result()
+counts = result.<span class="func">get_counts</span>()
+print(counts)  <span class="comment"># {'101': ~945, ...}</span>
+        </div>
+
+        <footer>
+            <p>
+                <a href="index.html">← トップに戻る</a>
+            </p>
+            <p style="margin-top:12px;">
+                Written with quantum superposition of caffeine and curiosity
+            </p>
+        </footer>
+    </div>
+
+    <script>
+    // ============ Background quantum particles ============
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let bW, bH;
+
+    function resizeBg() {
+        bW = bgCanvas.width = innerWidth;
+        bH = bgCanvas.height = innerHeight;
+    }
+    resizeBg();
+    addEventListener('resize', resizeBg);
+
+    const dots = [];
+    for (let i = 0; i < 80; i++) {
+        dots.push({
+            x: Math.random() * 3000,
+            y: Math.random() * 3000,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3,
+            r: Math.random() * 1.5 + 0.5,
+        });
+    }
+
+    function drawBg() {
+        bgCtx.clearRect(0, 0, bW, bH);
+        for (const d of dots) {
+            d.x += d.vx;
+            d.y += d.vy;
+            if (d.x < 0) d.x = bW;
+            if (d.x > bW) d.x = 0;
+            if (d.y < 0) d.y = bH;
+            if (d.y > bH) d.y = 0;
+
+            bgCtx.beginPath();
+            bgCtx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+            bgCtx.fillStyle = 'rgba(129, 140, 248, 0.3)';
+            bgCtx.fill();
+        }
+
+        // Lines between nearby dots
+        for (let i = 0; i < dots.length; i++) {
+            for (let j = i + 1; j < dots.length; j++) {
+                const dx = dots[i].x - dots[j].x;
+                const dy = dots[i].y - dots[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 150) {
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(dots[i].x, dots[i].y);
+                    bgCtx.lineTo(dots[j].x, dots[j].y);
+                    bgCtx.strokeStyle = `rgba(99, 102, 241, ${0.08 * (1 - dist / 150)})`;
+                    bgCtx.lineWidth = 0.5;
+                    bgCtx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(drawBg);
+    }
+    drawBg();
+
+    // ============ Static amplitude diagram (Section 6) ============
+    function renderAmpDiagram() {
+        const container = document.getElementById('ampDiagram');
+        const N = 8;
+        const target = 5;
+
+        const steps = [
+            { title: '初期状態: すべて均等 (1/√8 ≈ 0.354)', iter: 0 },
+            { title: '1回目の反復後: 正解が増幅', iter: 1 },
+            { title: '2回目の反復後: 正解がほぼ最大 (最適)', iter: 2 },
+        ];
+
+        for (const step of steps) {
+            let amps = new Array(N).fill(1 / Math.sqrt(N));
+
+            for (let g = 0; g < step.iter; g++) {
+                // Oracle
+                amps[target] = -amps[target];
+                // Diffusion
+                const mean = amps.reduce((a, b) => a + b, 0) / N;
+                amps = amps.map(a => 2 * mean - a);
+            }
+
+            const maxAmp = Math.max(...amps.map(Math.abs));
+            const mean = amps.reduce((a, b) => a + b, 0) / N;
+
+            let html = `<div><div class="amp-step-title">${step.title}</div><div class="amp-bars">`;
+
+            for (let i = 0; i < N; i++) {
+                const h = Math.abs(amps[i]) / (maxAmp + 0.05) * 100;
+                const color = i === target ? '#f472b6' : '#6366f1';
+                const cls = i === target ? ' target' : '';
+                const label = i.toString(2).padStart(3, '0');
+                html += `<div class="amp-bar${cls}" style="height:${h}%;background:${color}">`;
+                html += `<div class="amp-label">${i === target ? '|' + label + '⟩✓' : '|' + label + '⟩'}</div></div>`;
+            }
+
+            // Mean line
+            const meanH = Math.abs(mean) / (maxAmp + 0.05) * 100;
+            html += `<div class="mean-line" style="bottom:${meanH + 24}px"><span>平均</span></div>`;
+
+            html += '</div></div>';
+            container.innerHTML += html;
+        }
+    }
+    renderAmpDiagram();
+
+    // ============ Interactive demo (Section 7) ============
+    const demoCanvas = document.getElementById('demo-canvas');
+    const demoCtx = demoCanvas.getContext('2d');
+
+    function resizeDemo() {
+        const rect = demoCanvas.parentElement.getBoundingClientRect();
+        demoCanvas.width = rect.width - 56;
+        demoCanvas.height = 250;
+    }
+    resizeDemo();
+    addEventListener('resize', resizeDemo);
+
+    function groverSim(nQubits, iterations) {
+        const N = Math.pow(2, nQubits);
+        const target = Math.floor(N / 3); // pick a target
+        let amps = new Array(N).fill(1 / Math.sqrt(N));
+
+        for (let g = 0; g < iterations; g++) {
+            amps[target] = -amps[target];
+            const mean = amps.reduce((a, b) => a + b, 0) / N;
+            amps = amps.map(a => 2 * mean - a);
+        }
+
+        return { amps, target, N };
+    }
+
+    function drawDemo(nQubits, iterations) {
+        const { amps, target, N } = groverSim(nQubits, iterations);
+        const w = demoCanvas.width;
+        const h = demoCanvas.height;
+        demoCtx.clearRect(0, 0, w, h);
+
+        const barW = Math.max(2, Math.min(30, (w - 40) / N - 1));
+        const startX = (w - (barW + 1) * N) / 2;
+        const maxAmp = Math.max(...amps.map(Math.abs), 0.01);
+        const chartH = h - 50;
+
+        // Zero line
+        const zeroY = 30;
+        demoCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+        demoCtx.beginPath();
+        demoCtx.moveTo(0, zeroY + chartH);
+        demoCtx.lineTo(w, zeroY + chartH);
+        demoCtx.stroke();
+
+        // Bars
+        for (let i = 0; i < N; i++) {
+            const prob = amps[i] * amps[i];
+            const barH = (prob / (maxAmp * maxAmp + 0.001)) * chartH;
+            const x = startX + i * (barW + 1);
+            const isTarget = i === target;
+
+            demoCtx.fillStyle = isTarget ? '#f472b6' : 'rgba(99, 102, 241, 0.6)';
+            demoCtx.fillRect(x, zeroY + chartH - barH, barW, barH);
+
+            if (isTarget) {
+                demoCtx.shadowColor = '#f472b6';
+                demoCtx.shadowBlur = 10;
+                demoCtx.fillRect(x, zeroY + chartH - barH, barW, barH);
+                demoCtx.shadowBlur = 0;
+            }
+        }
+
+        // Labels
+        demoCtx.fillStyle = '#888';
+        demoCtx.font = '11px sans-serif';
+        demoCtx.textAlign = 'center';
+        demoCtx.fillText(`正解: 状態 ${target}`, w / 2, 20);
+
+        const prob = (amps[target] * amps[target] * 100).toFixed(1);
+        const optimal = Math.floor(Math.PI / 4 * Math.sqrt(N));
+
+        document.getElementById('demoInfo').innerHTML =
+            `N = ${N} | 反復 ${iterations}回 | 正解の観測確率: <strong style="color:#f472b6">${prob}%</strong> | ` +
+            `最適反復回数: ${optimal}回`;
+    }
+
+    document.getElementById('runDemo').addEventListener('click', () => {
+        const nQ = parseInt(document.getElementById('nQubits').value);
+        const nI = parseInt(document.getElementById('nIter').value);
+        drawDemo(nQ, nI);
+    });
+
+    document.getElementById('optimalBtn').addEventListener('click', () => {
+        const nQ = parseInt(document.getElementById('nQubits').value);
+        const N = Math.pow(2, nQ);
+        const optimal = Math.floor(Math.PI / 4 * Math.sqrt(N));
+        document.getElementById('nIter').value = Math.min(optimal, 8);
+        drawDemo(nQ, Math.min(optimal, 8));
+    });
+
+    // Initial draw
+    drawDemo(3, 2);
+    </script>
+</body>
+</html>
